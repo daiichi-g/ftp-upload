@@ -1,3 +1,19 @@
+inputs:
+  server:
+    description: "FTPサーバー名"
+    required: true
+  user:
+    description: "FTPユーザー名"
+    required: true
+  password:
+    description: "FTPパスワード"
+    required: true
+  server-dir:
+    description: "アップロード先のディレクトリパス"
+    required: true
+  local-dir:
+    description: "アップロード元のディレクトリパス"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -16,4 +32,9 @@ runs:
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
-        dotnet run --project ${{ github.action_path }}/ftp-upload.csproj
+        dotnet run --project ${{ github.action_path }}/ftp-upload.csproj \
+                   --server ${{inputs.server}} \
+                   --user ${{inputs.user}} \
+                   --password ${{inputs.password}} \
+                   --server-dir ${{inputs.server-dir}} \
+                   --local-dir ${{inputs.local-dir}}
