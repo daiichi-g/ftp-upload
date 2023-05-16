@@ -32,7 +32,7 @@ runs:
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
-        dotnet run --project ${{ github.action_path }}/ftp-upload.csproj \
+        dotnet run --project $(Join-Path "${{ github.action_path }}" "ftp-upload.csproj") \
                    --server ${{inputs.server}} \
                    --user ${{inputs.user}} \
                    --password ${{inputs.password}} \
