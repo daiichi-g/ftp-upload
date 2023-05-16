@@ -1,0 +1,10 @@
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: .NETバージョン確認
+      shell: pwsh
+      run: |
+        dotnet --version
