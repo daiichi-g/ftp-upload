@@ -9,6 +9,10 @@ runs:
       shell: pwsh
       run: |
         dotnet --version
+    - name: カレントディレクトリを確認
+      shell: pwsh
+      run: |
+        pwd
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
