@@ -16,4 +16,4 @@ runs:
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
-        dotnet run --project ftp-upload.csproj
+        dotnet run --project ${{ github.action_path }}/ftp-upload.csproj
