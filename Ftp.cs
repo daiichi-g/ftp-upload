@@ -65,8 +65,8 @@ namespace ftp_upload
                 foreach (var result in results)
                 {
                     Console.ForegroundColor = result.IsSuccess ? ConsoleColor.Green : ConsoleColor.Red;
-                    var status = (result.IsSuccess ? "OK" : "NG") + (result.IsSkipped ? "(SKIP)" : "");
-                    Console.WriteLine($"[{results.IndexOf(result) + 1}/{results.Count()}] {status} {result.LocalPath}({GetFormatFileSize(result.Size)})");
+                    var status = result.IsSkipped ? "SKIP" : (result.IsSuccess ? "OK" : "NG");
+                    Console.WriteLine($"[{results.IndexOf(result) + 1}/{results.Count()}] {status} {result.RemotePath}({GetFormatFileSize(result.Size)})");
                     Console.ResetColor();
                 }
                 Console.WriteLine();
