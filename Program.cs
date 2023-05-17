@@ -1,19 +1,19 @@
 ﻿using System.CommandLine;
 
-var argument1 = new Argument<string>("--server", description: "FTPサーバー名");
-var argument2 = new Argument<string>("--user", description: "FTPユーザー名");
-var argument3 = new Argument<string>("--password", description: "FTPパスワード");
-var argument4 = new Argument<string>("--server-dir", description: "アップロード先のディレクトリパス");
-var argument5 = new Argument<string>("--local-dir", description: "アップロード元のディレクトリパス");
+var option1 = new Option<string>("--server", description: "FTPサーバー名") { IsRequired = true };
+var option2 = new Option<string>("--user", description: "FTPユーザー名") { IsRequired = true };
+var option3 = new Option<string>("--password", description: "FTPパスワード") { IsRequired = true };
+var option4 = new Option<string>("--server-dir", description: "アップロード先のディレクトリパス") { IsRequired = true };
+var option5 = new Option<string>("--local-dir", description: "アップロード元のディレクトリパス") { IsRequired = true };
 
 var cmd = new RootCommand { };
 cmd.Description = "FTPアップロードするCLIツール";
 
-cmd.AddArgument(argument1);
-cmd.AddArgument(argument2);
-cmd.AddArgument(argument3);
-cmd.AddArgument(argument4);
-cmd.AddArgument(argument5);
+cmd.AddOption(option1);
+cmd.AddOption(option2);
+cmd.AddOption(option3);
+cmd.AddOption(option4);
+cmd.AddOption(option5);
 
 cmd.SetHandler<string, string, string, string, string>((server, user, password, serverDir, localDir) =>
 {
@@ -22,7 +22,7 @@ cmd.SetHandler<string, string, string, string, string>((server, user, password, 
     Console.WriteLine($"password: {password}");
     Console.WriteLine($"serverDir: {serverDir}");
     Console.WriteLine($"localDir: {localDir}");
-}, argument1, argument2, argument3, argument4, argument5);
+}, option1, option2, option3, option4, option5);
 
 Console.WriteLine("Start");
 var result = await cmd.InvokeAsync(args);
