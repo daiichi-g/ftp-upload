@@ -45,14 +45,31 @@ namespace ftp_upload
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
+                Console.WriteLine("FTP接続中...");
                 var profile = await client.AutoConnect();
-                var result = await client.UploadDirectory(
+
+                Console.WriteLine("FTPアップロード中...");
+                var results = await client.UploadDirectory(
                     localFolder: localFolder,
                     remoteFolder: remoteFolder,
                     mode: FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite
                 );
-                success = result.All(v => v.IsSuccess);
+                success = results.All(v => v.IsSuccess);
+
+                // アップロードファイルをログ出力
+                foreach (var result in results)
+                {
+                    Console.ForegroundColor = result.IsSuccess ? ConsoleColor.Green : ConsoleColor.Red;
+                    var status = (result.IsSuccess ? "OK" : "NG") + (result.IsSkipped ? "(SKIP)" : "");
+                    Console.WriteLine($"[{results.IndexOf(result)}/{results.Count()}] {status} {result.LocalPath}({result.Size})");
+                    Console.ResetColor();
+                }
+                Console.WriteLine();
+
+                Console.ForegroundColor = success ? ConsoleColor.Green : ConsoleColor.Red;
+                Console.WriteLine($"結果(OK:{results.Count(v => v.IsSuccess)}, NG:{results.Count(v => !v.IsSuccess)})");
+                Console.ResetColor();
             }
             catch (Exception ex)
             {
