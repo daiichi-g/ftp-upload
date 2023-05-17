@@ -45,10 +45,14 @@ namespace ftp_upload
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
+                Console.WriteLine();
                 Console.WriteLine("FTP接続中...");
+                Console.WriteLine();
                 var profile = await client.AutoConnect();
 
+                Console.WriteLine();
                 Console.WriteLine("FTPアップロード中...");
+                Console.WriteLine();
                 var results = await client.UploadDirectory(
                     localFolder: localFolder,
                     remoteFolder: remoteFolder,
@@ -62,7 +66,7 @@ namespace ftp_upload
                 {
                     Console.ForegroundColor = result.IsSuccess ? ConsoleColor.Green : ConsoleColor.Red;
                     var status = (result.IsSuccess ? "OK" : "NG") + (result.IsSkipped ? "(SKIP)" : "");
-                    Console.WriteLine($"[{results.IndexOf(result)}/{results.Count()}] {status} {result.LocalPath}({result.Size})");
+                    Console.WriteLine($"[{results.IndexOf(result) + 1}/{results.Count()}] {status} {result.LocalPath}({GetFormatFileSize(result.Size)})");
                     Console.ResetColor();
                 }
                 Console.WriteLine();
@@ -81,5 +85,23 @@ namespace ftp_upload
             }
             return success;
         }
+
+        /// <summary>
+        /// ファイルサイズを適切な単位に変換
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        private static string GetFormatFileSize(long size)
+        {
+            var unit = new[] { "B", "KB", "MB", "GB", "TB" };
+            var index = 0;
+            while (size >= 1024)
+            {
+                size /= 1024;
+                index++;
+            }
+            return $"{size}{unit[index]}";
+        }
     }
+
 }
