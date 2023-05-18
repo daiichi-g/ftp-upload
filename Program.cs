@@ -24,6 +24,8 @@ cmd.SetHandler<string, string, string, string, string>(async (server, user, pass
     Console.WriteLine($"serverDir: {serverDir}");
     Console.WriteLine($"localDir: {localDir}");
 
+    Console.WriteLine($"Path.GetFullPath(localDir): {Path.GetFullPath(localDir)}");
+
     var ftp = new Ftp(server, user, password);
     var success = await ftp.UploadDirectoryAsync(localDir, serverDir);
     if (!success)
