@@ -109,7 +109,7 @@ namespace ftp_upload
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"FtpHelper.Upload ex: {ex.Message}");
+                Console.WriteLine($"Ftp.UploadDirectoryAsync ex: {ex.Message}");
             }
             finally
             {
@@ -168,7 +168,7 @@ namespace ftp_upload
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"FtpHelper.Upload ex: {ex.Message}");
+                Console.WriteLine($"Ftp.UploadFileAsync ex: {ex.Message}");
             }
             finally
             {
