@@ -71,8 +71,9 @@ namespace ftp_upload
                         string.Join("\t", new string[] {
                             $"{results.IndexOf(result) + 1}/{results.Count()}",
                             result.IsSkipped ? "SKIP" : (result.IsSuccess ? "OK" : "NG"),
+                            GetResultType(result.Type),
+                            GetFormatFileSize(result.Size),
                             result.RemotePath,
-                            GetFormatFileSize(result.Size)
                         })
                     );
                     Console.ResetColor();
@@ -94,6 +95,27 @@ namespace ftp_upload
             return success;
         }
 
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        private static string GetResultType(FtpObjectType value)
+        {
+            switch (value)
+            {
+                case FtpObjectType.Directory:
+                    return "DIR";
+                case FtpObjectType.File:
+                    return "FILE";
+                case FtpObjectType.Link:
+                    return "LINK";
+                default:
+                    return "UNKNOWN";
+            }
+        }
+
         /// <summary>
         /// ファイルサイズを適切な単位に変換
         /// </summary>
@@ -108,8 +130,7 @@ namespace ftp_upload
                 size /= 1024;
                 index++;
             }
-            return $"{size} {unit[index]}";
+            return $"{size}[{unit[index]}]";
         }
     }
-
 }
