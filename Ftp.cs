@@ -59,7 +59,7 @@ namespace ftp_upload
                     mode: FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite
                 );
-                success = results.All(v => v.IsSuccess);
+                success = results.All(v => !v.IsFailed);
 
                 // アップロードファイルをログ出力
                 foreach (var result in results)
