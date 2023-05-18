@@ -66,15 +66,21 @@ namespace ftp_upload
                 // アップロードファイルをログ出力
                 foreach (var result in results)
                 {
-                    Console.ForegroundColor = result.IsSuccess ? ConsoleColor.Green : ConsoleColor.Red;
-                    var status = result.IsSkipped ? "SKIP" : (result.IsSuccess ? "OK" : "NG");
-                    Console.WriteLine($"[{results.IndexOf(result) + 1}/{results.Count()}] {status} {result.RemotePath}({GetFormatFileSize(result.Size)})");
+                    Console.ForegroundColor = result.IsFailed ? ConsoleColor.Red : ConsoleColor.Green;
+                    Console.WriteLine(
+                        string.Join("\t", new string[] {
+                            $"{results.IndexOf(result) + 1}/{results.Count()}",
+                            result.IsSkipped ? "SKIP" : (result.IsSuccess ? "OK" : "NG"),
+                            result.RemotePath,
+                            GetFormatFileSize(result.Size)
+                        })
+                    );
                     Console.ResetColor();
                 }
                 Console.WriteLine();
 
                 Console.ForegroundColor = success ? ConsoleColor.Green : ConsoleColor.Red;
-                Console.WriteLine($"結果(OK:{results.Count(v => v.IsSuccess)}, NG:{results.Count(v => !v.IsSuccess)})");
+                Console.WriteLine($"結果(OK:{results.Count(v => !v.IsFailed)}, NG:{results.Count(v => v.IsFailed)})");
                 Console.ResetColor();
             }
             catch (Exception ex)
@@ -102,7 +108,7 @@ namespace ftp_upload
                 size /= 1024;
                 index++;
             }
-            return $"{size}{unit[index]}";
+            return $"{size} {unit[index]}";
         }
     }
 
