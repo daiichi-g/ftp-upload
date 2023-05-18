@@ -8,11 +8,11 @@ inputs:
   password:
     description: "FTPパスワード"
     required: true
-  server-dir:
-    description: "アップロード先のディレクトリパス"
+  remote:
+    description: "リモート側のパス"
     required: true
-  local-dir:
-    description: "アップロード元のディレクトリパス"
+  local:
+    description: "ローカル側のパス"
     required: true
   mirror:
     description: "ミラーリングするかどうか"
@@ -40,6 +40,6 @@ runs:
                    --server ${{ inputs.server }} `
                    --user ${{ inputs.user }} `
                    --password ${{ inputs.password }} `
-                   --server-dir ${{ inputs.server-dir }} `
-                   --local-dir ${{ inputs.local-dir }} `
+                   --remote ${{ inputs.remote }} `
+                   --local ${{ inputs.local }} `
                    --mirror ${{ inputs.mirror}}
