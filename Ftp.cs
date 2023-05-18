@@ -130,7 +130,7 @@ namespace ftp_upload
                 size /= 1024;
                 index++;
             }
-            return $"{size}[{unit[index]}]";
+            return $"{size}[{unit[index]}]".PadLeft(10, ' ');
         }
     }
 }
