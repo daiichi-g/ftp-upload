@@ -14,6 +14,10 @@ inputs:
   local-dir:
     description: "アップロード元のディレクトリパス"
     required: true
+  mirror:
+    description: "ミラーリングするかどうか"
+    required: false
+    default: false
 runs:
   using: "composite"
   steps:
@@ -37,4 +41,5 @@ runs:
                    --user ${{ inputs.user }} `
                    --password ${{ inputs.password }} `
                    --server-dir ${{ inputs.server-dir }} `
-                   --local-dir ${{ inputs.local-dir }}
+                   --local-dir ${{ inputs.local-dir }} `
+                   --mirror ${{ inputs.mirror}}
