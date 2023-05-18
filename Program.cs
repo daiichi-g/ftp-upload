@@ -50,11 +50,11 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     }
     if (local == "")
     {
-        errors.Add("アップロード元のディレクトリパスを指定してください。");
+        errors.Add("リモート側のパスを指定してください。");
     }
-    else if (!Directory.Exists(local))
+    else if (!(Directory.Exists(local) || File.Exists(local)))
     {
-        errors.Add("アップロード元のディレクトリパスには、存在するディレクトリのパスを指定してください。");
+        errors.Add("ローカル側のパスには、存在するファイルorディレクトリのパスを指定してください。");
     }
     if (errors.Count() > 0)
     {
@@ -65,7 +65,7 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     }
 
     var ftp = new Ftp(server, user, password);
-    var success = await ftp.UploadDirectoryAsync(local, remote, mirror);
+    var success = await ftp.UploadAsync(local, remote, mirror);
     if (!success)
     {
         throw new Exception("FTPアップロードに失敗しました");
