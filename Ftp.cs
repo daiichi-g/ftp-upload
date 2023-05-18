@@ -95,7 +95,7 @@ namespace ftp_upload
                             CalcStatusLabel(result),
                             GetResultType(result.Type),
                             GetFormatFileSize(result),
-                            result.RemotePath,
+                            $"{result.LocalPath} → {result.RemotePath}",
                         })
                     );
                     Console.ResetColor();
