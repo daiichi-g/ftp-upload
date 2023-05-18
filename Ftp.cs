@@ -65,6 +65,25 @@ namespace ftp_upload
         /// <returns></returns>
         public async Task<bool> UploadDirectoryAsync(string local, string remote, bool mirror)
         {
+            // ディレクトリ直下にweb.configがある場合は、web.configを先にアップロード
+            var fileName = "web.config";
+            var filePath = Path.Join(local, fileName);
+            if (File.Exists(filePath))
+            {
+                Console.WriteLine("web.configをアップロード中...");
+                var success = await UploadFileAsync(
+                    local: filePath,
+                    remote: remote.EndsWith("/") ? $"{remote}{fileName}" : $"{remote}/{fileName}"
+                );
+                if (!success)
+                {
+                    return false;
+                }
+
+                Console.WriteLine("IISが実行ファイルを解放するのを待機...");
+                await Task.Delay(3000);
+            }
+
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
