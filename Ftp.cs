@@ -72,7 +72,7 @@ namespace ftp_upload
                             $"{results.IndexOf(result) + 1}/{results.Count()}",
                             result.IsSkipped ? "SKIP" : (result.IsSuccess ? "OK" : "NG"),
                             GetResultType(result.Type),
-                            GetFormatFileSize(result.Size),
+                            GetFormatFileSize(result),
                             result.RemotePath,
                         })
                     );
@@ -117,20 +117,30 @@ namespace ftp_upload
         }
 
         /// <summary>
-        /// ファイルサイズを適切な単位に変換
+        /// 
         /// </summary>
-        /// <param name="size"></param>
+        /// <param name="result"></param>
+        /// <param name="totalWidth"></param>
         /// <returns></returns>
-        private static string GetFormatFileSize(long size)
+        private static string GetFormatFileSize(FtpResult result, int totalWidth = 10)
         {
-            var unit = new[] { "B", "KB", "MB", "GB", "TB" };
-            var index = 0;
-            while (size >= 1024)
+            if (result.Type == FtpObjectType.File)
             {
-                size /= 1024;
-                index++;
+                // ファイルサイズを適切な単位に変換
+                var size = result.Size;
+                var unit = new[] { "B", "KB", "MB", "GB", "TB" };
+                var index = 0;
+                while (size >= 1024)
+                {
+                    size /= 1024;
+                    index++;
+                }
+                return $"{size}[{unit[index]}]".PadLeft(totalWidth, ' ');
             }
-            return $"{size}[{unit[index]}]".PadLeft(10, ' ');
+
+
+            // ファイル以外
+            return "".PadLeft(totalWidth, ' ');
         }
     }
 }
