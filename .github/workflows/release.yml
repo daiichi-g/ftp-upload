@@ -1,0 +1,18 @@
+name: release
+on:
+  push:
+    branches:
+      - 'main'
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: V1タグを更新
+        run: |
+          git push -d origin v1
+          git tag v1
+          git push origin v1
