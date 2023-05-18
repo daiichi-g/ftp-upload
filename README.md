@@ -57,4 +57,5 @@ jobs:
 |remote  |必須  |  | リモート側のファイルパス(またはディレクトリパス)<span style='color:red'>※1</span> |
 |local  |必須  |  | ローカル側のファイルパス(またはディレクトリパス)<span style='color:red'>※1</span> |
 |mirror  | | false | true:ミラーリングあり<br>false:ミラーリングなし<br>※ディレクトリアップロード時にのみ有効なオプション |
+
 <span style='color:red'>※1: local=ファイルパスとremote=ディレクトリパス、またはその逆の組み合わせは指定できません<br>
