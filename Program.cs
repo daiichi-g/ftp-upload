@@ -4,8 +4,8 @@ using ftp_upload;
 var option1 = new Option<string>("--server", description: "FTPサーバー名") { IsRequired = true };
 var option2 = new Option<string>("--user", description: "FTPユーザー名") { IsRequired = true };
 var option3 = new Option<string>("--password", description: "FTPパスワード") { IsRequired = true };
-var option4 = new Option<string>("--server-dir", description: "アップロード先のディレクトリパス") { IsRequired = true };
-var option5 = new Option<string>("--local-dir", description: "アップロード元のディレクトリパス") { IsRequired = true };
+var option4 = new Option<string>("--remote", description: "リモートパス") { IsRequired = true };
+var option5 = new Option<string>("--local", description: "ローカルパス") { IsRequired = true };
 var option6 = new Option<bool>("--mirror", () => false, description: "ミラーリングするかどうか") { IsRequired = false };
 
 var cmd = new RootCommand { };
@@ -18,17 +18,17 @@ cmd.AddOption(option4);
 cmd.AddOption(option5);
 cmd.AddOption(option6);
 
-cmd.SetHandler<string, string, string, string, string, bool>(async (server, user, password, serverDir, localDir, mirror) =>
+cmd.SetHandler<string, string, string, string, string, bool>(async (server, user, password, remote, local, mirror) =>
 {
     Console.WriteLine($"server: {server}");
     Console.WriteLine($"user: {user}");
     Console.WriteLine($"password: {password}");
-    Console.WriteLine($"serverDir: {serverDir}");
-    Console.WriteLine($"localDir: {localDir}");
+    Console.WriteLine($"remote: {remote}");
+    Console.WriteLine($"local: {local}");
     Console.WriteLine($"mirror: {mirror}");
 
     Console.WriteLine();
-    Console.WriteLine($"Path.GetFullPath(localDir): {Path.GetFullPath(localDir)}");
+    Console.WriteLine($"Path.GetFullPath(localDir): {Path.GetFullPath(local)}");
 
     // パラメータチェック
     var errors = new List<string>();
@@ -44,17 +44,17 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     {
         errors.Add("FTPパスワードを指定してください。");
     }
-    if (serverDir == "")
+    if (remote == "")
     {
         errors.Add("アップロード先のディレクトリパスを指定してください。");
     }
-    if (localDir == "")
+    if (local == "")
     {
-        errors.Add("アップロード元のディレクトリパスを指定してください。");
+        errors.Add("リモート側のパスを指定してください。");
     }
-    else if (!Directory.Exists(localDir))
+    else if (!(Directory.Exists(local) || File.Exists(local)))
     {
-        errors.Add("アップロード元のディレクトリパスには、存在するディレクトリのパスを指定してください。");
+        errors.Add("ローカル側のパスには、存在するファイルorディレクトリのパスを指定してください。");
     }
     if (errors.Count() > 0)
     {
@@ -65,7 +65,7 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     }
 
     var ftp = new Ftp(server, user, password);
-    var success = await ftp.UploadDirectoryAsync(localDir, serverDir, mirror);
+    var success = await ftp.UploadAsync(local, remote, mirror);
     if (!success)
     {
         throw new Exception("FTPアップロードに失敗しました");
