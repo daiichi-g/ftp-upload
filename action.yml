@@ -1,0 +1,40 @@
+inputs:
+  server:
+    description: "FTPサーバー名"
+    required: true
+  user:
+    description: "FTPユーザー名"
+    required: true
+  password:
+    description: "FTPパスワード"
+    required: true
+  server-dir:
+    description: "アップロード先のディレクトリパス"
+    required: true
+  local-dir:
+    description: "アップロード元のディレクトリパス"
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 7.0.x
+    - name: .NETバージョン確認
+      shell: pwsh
+      run: |
+        dotnet --version
+    - name: カレントディレクトリを確認
+      shell: pwsh
+      run: |
+        pwd
+    - name: .NETプロジェクトを実行
+      shell: pwsh
+      run: |
+        $ProjFilePath = Join-Path "${{ github.action_path }}" "ftp-upload.csproj"
+        dotnet run --project $ProjFilePath `
+                   --server ${{ inputs.server }} `
+                   --user ${{ inputs.user }} `
+                   --password ${{ inputs.password }} `
+                   --server-dir ${{ inputs.server-dir }} `
+                   --local-dir ${{ inputs.local-dir }}
