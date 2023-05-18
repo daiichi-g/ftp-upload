@@ -27,7 +27,39 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     Console.WriteLine($"localDir: {localDir}");
     Console.WriteLine($"mirror: {mirror}");
 
+    Console.WriteLine();
     Console.WriteLine($"Path.GetFullPath(localDir): {Path.GetFullPath(localDir)}");
+
+    // パラメータチェック
+    var errors = new List<string>();
+    if (server == "")
+    {
+        errors.Add("FTPサーバー名を指定してください。");
+    }
+    if (user == "")
+    {
+        errors.Add("FTPユーザー名を指定してください。");
+    }
+    if (password == "")
+    {
+        errors.Add("FTPパスワードを指定してください。");
+    }
+    if (serverDir == "")
+    {
+        errors.Add("アップロード先のディレクトリパスを指定してください。");
+    }
+    if (localDir == "")
+    {
+        errors.Add("アップロード元のディレクトリパスを指定してください。");
+    }
+    else if (!Directory.Exists(localDir))
+    {
+        errors.Add("アップロード元のディレクトリパスには、存在するディレクトリのパスを指定してください。");
+    }
+    if (errors.Count() > 0)
+    {
+        throw new Exception($"パラメータ指定が不適切なため、FTPアップロードを中止しました。\n{string.Join("\n", errors.Select(v => $"　・{v}"))}");
+    }
 
     var ftp = new Ftp(server, user, password);
     var success = await ftp.UploadDirectoryAsync(localDir, serverDir, mirror);
