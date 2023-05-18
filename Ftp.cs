@@ -33,13 +33,15 @@ namespace ftp_upload
             Password = password;
         }
 
+
         /// <summary>
         /// ディレクトリをアップロード
         /// </summary>
         /// <param name="localFolder">ローカル側のフォルダパス</param>
         /// <param name="remoteFolder">リモート側のフォルダパス</param>
+        /// <param name="mirror">ミラーリングするかどうか</param>
         /// <returns></returns>
-        public async Task<bool> UploadDirectoryAsync(string localFolder, string remoteFolder)
+        public async Task<bool> UploadDirectoryAsync(string localFolder, string remoteFolder, bool mirror)
         {
             var success = false;
             var client = new AsyncFtpClient(Server, User, Password);
@@ -56,7 +58,7 @@ namespace ftp_upload
                 var results = await client.UploadDirectory(
                     localFolder: localFolder,
                     remoteFolder: remoteFolder,
-                    mode: FtpFolderSyncMode.Update,
+                    mode: mirror ? FtpFolderSyncMode.Mirror : FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite
                 );
                 success = results.All(v => !v.IsFailed);
