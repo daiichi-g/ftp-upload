@@ -58,7 +58,10 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
     }
     if (errors.Count() > 0)
     {
-        throw new Exception($"パラメータ指定が不適切なため、FTPアップロードを中止しました。\n{string.Join("\n", errors.Select(v => $"　・{v}"))}");
+        Console.WriteLine("パラメータ指定が不適切なため、FTPアップロードを中止しました。");
+        Console.WriteLine($"{string.Join("\n", errors.Select(v => $"　・{v}"))}");
+
+        throw new Exception($"パラメータ指定が不適切なため、FTPアップロードを中止しました。");
     }
 
     var ftp = new Ftp(server, user, password);
