@@ -1,3 +1,6 @@
+[![ci](https://github.com/daiichi-g/ftp-upload/actions/workflows/ci.yml/badge.svg)](https://github.com/daiichi-g/ftp-upload/actions/workflows/ci.yml)
+[![release](https://github.com/daiichi-g/ftp-upload/actions/workflows/release.yml/badge.svg)](https://github.com/daiichi-g/ftp-upload/actions/workflows/release.yml)
+
 # FTPアップロードするアクション
 
 ## 使い方
