@@ -94,6 +94,7 @@ namespace ftp_upload
 
                 Console.WriteLine();
                 Console.WriteLine("ディレクトリアップロード中...");
+                Console.WriteLine("ミラーリング: " + (mirror ? "ON" : "OFF"));
                 Console.WriteLine();
 
                 var results = await client.UploadDirectory(
