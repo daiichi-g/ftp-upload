@@ -65,7 +65,6 @@ namespace ftp_upload
         /// <returns></returns>
         public async Task<bool> UploadDirectoryAsync(string local, string remote, bool mirror)
         {
-            var success = false;
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
@@ -84,7 +83,7 @@ namespace ftp_upload
                     mode: mirror ? FtpFolderSyncMode.Mirror : FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite
                 );
-                success = results.All(v => !v.IsFailed);
+                var success = results.All(v => !v.IsFailed);
 
                 // アップロードファイルをログ出力
                 foreach (var result in results)
@@ -106,30 +105,27 @@ namespace ftp_upload
                 Console.ForegroundColor = success ? ConsoleColor.Green : ConsoleColor.Red;
                 Console.WriteLine($"結果(OK:{results.Count(v => !v.IsFailed)}, NG:{results.Count(v => v.IsFailed)})");
                 Console.ResetColor();
+                return success;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ftp.UploadDirectoryAsync ex: {ex.Message}");
+                return false;
             }
             finally
             {
                 await client.Disconnect();
             }
-            return success;
         }
-
-
 
         /// <summary>
         /// ファイルアップロード
         /// </summary>
         /// <param name="local">ローカル側のパス</param>
         /// <param name="remote">リモート側のパス</param>
-        /// <param name="mirror">ミラーリングするかどうか</param>
         /// <returns></returns>
         public async Task<bool> UploadFileAsync(string local, string remote)
         {
-            var success = false;
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
@@ -148,7 +144,6 @@ namespace ftp_upload
                     existsMode: FtpRemoteExists.Overwrite
                 );
 
-
                 // アップロードファイルをログ出力
                 Console.ForegroundColor = status == FtpStatus.Failed ? ConsoleColor.Red : ConsoleColor.Green;
                 Console.WriteLine(
@@ -165,16 +160,18 @@ namespace ftp_upload
                 Console.ForegroundColor = CalcConsoleColor(status);
                 Console.WriteLine($"結果: {CalcStatusLabel(status)}");
                 Console.ResetColor();
+
+                return status != FtpStatus.Failed;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Ftp.UploadFileAsync ex: {ex.Message}");
+                return false;
             }
             finally
             {
                 await client.Disconnect();
             }
-            return success;
         }
 
         private static string CalcStatusLabel(FtpStatus value)
