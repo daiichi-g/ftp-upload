@@ -102,8 +102,9 @@ namespace ftp_upload
                     remoteFolder: remote,
                     mode: mirror ? FtpFolderSyncMode.Mirror : FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite,
-                    progress: new Progress<FtpProgress>(p=>{
-                        Console.WriteLine($"[{p.FileIndex+1}/{p.FileCount}] {Math.Round(p.Progress)}% {p.TransferSpeedToString().PadLeft(10, ' ')} {p.RemotePath}");
+                    progress: new Progress<FtpProgress>(p =>
+                    {
+                        Console.WriteLine($"[{p.FileIndex + 1}/{p.FileCount}] {Math.Round(p.Progress)}% {p.TransferSpeedToString().PadLeft(10, ' ')} {p.RemotePath}");
                     })
                 );
                 Console.WriteLine("");
@@ -166,7 +167,11 @@ namespace ftp_upload
                 var status = await client.UploadFile(
                     localPath: local,
                     remotePath: remote,
-                    existsMode: FtpRemoteExists.Overwrite
+                    existsMode: FtpRemoteExists.Overwrite,
+                    progress: new Progress<FtpProgress>(p =>
+                    {
+                        Console.WriteLine($"{Math.Round(p.Progress)}% {p.TransferSpeedToString().PadLeft(10, ' ')} {p.RemotePath}");
+                    })
                 );
 
                 // アップロードファイルをログ出力
