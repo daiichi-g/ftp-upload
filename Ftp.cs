@@ -93,16 +93,21 @@ namespace ftp_upload
                 var profile = await client.AutoConnect();
 
                 Console.WriteLine();
-                Console.WriteLine("ディレクトリアップロード中...");
                 Console.WriteLine("ミラーリング: " + (mirror ? "ON" : "OFF"));
                 Console.WriteLine();
+                Console.WriteLine("ディレクトリアップロード中...");
 
                 var results = await client.UploadDirectory(
                     localFolder: local,
                     remoteFolder: remote,
                     mode: mirror ? FtpFolderSyncMode.Mirror : FtpFolderSyncMode.Update,
-                    existsMode: FtpRemoteExists.Overwrite
+                    existsMode: FtpRemoteExists.Overwrite,
+                    progress: new Progress<FtpProgress>(p=>{
+                        Console.WriteLine($"[{p.FileIndex+1}/{p.FileCount}] {Math.Round(p.Progress)}% {p.TransferSpeedToString().PadLeft(10, ' ')} {p.RemotePath}");
+                    })
                 );
+                Console.WriteLine("");
+
                 var success = results.All(v => !v.IsFailed);
 
                 // アップロードファイルをログ出力
