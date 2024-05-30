@@ -21,7 +21,15 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-dotnet@v3
+    - name: .NETセットアップ済みか確認
+      id: dotnet_setup_completed
+      shell: pwsh
+      continue-on-error: true # エラーが発生しても続行
+      run: dotnet --version
+    - if: steps.dotnet_setup_completed.outcome == 'failure'
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
     - name: .NETバージョン確認
       shell: pwsh
       run: |
