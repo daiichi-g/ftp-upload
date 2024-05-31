@@ -21,15 +21,38 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-dotnet@v3
-    - name: .NETバージョン確認
+    - name: .NETセットアップ済みか確認
+      id: check
       shell: pwsh
       run: |
-        dotnet --version
+        $Result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
+        if ($Result.ExitCode -eq 0) {
+          Write-Output "dotnet setup completed"
+          Write-Output "dotnet_setup_completed=yes" >> $Env:GITHUB_OUTPUT
+        }else{
+          Write-Output "dotnet setup not completed"
+          Write-Output "dotnet_setup_completed=no" >> $Env:GITHUB_OUTPUT
+        }
+
+    - name: .NETセットアップ
+      if: steps.check.outputs.dotnet_setup_completed == 'no'
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: .NETバージョン確認
+      shell: pwsh
+      run: dotnet --version
+
+    - name: .NET詳細情報
+      shell: pwsh
+      run: dotnet --info
+
     - name: カレントディレクトリを確認
       shell: pwsh
       run: |
         pwd
+
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
