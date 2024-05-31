@@ -24,8 +24,15 @@ runs:
     - name: .NETセットアップ済みか確認
       id: dotnet_setup_completed
       shell: pwsh
-      continue-on-error: true # エラーが発生しても続行
-      run: dotnet --version
+      run: |
+        $result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
+        if ($result.ExitCode -eq 0) {
+          Write-Output "dotnet setup completed"
+          Write-Output "result=ok" >> $GITHUB_OUTPUT
+        }else{
+          Write-Output "dotnet setup not completed"
+          Write-Output "result=ng" >> $GITHUB_OUTPUT
+        }
     - if: steps.dotnet_setup_completed.outcome == 'failure'
       uses: actions/setup-dotnet@v3
       with:
