@@ -34,7 +34,7 @@ runs:
           Write-Output "result=ng" >> $GITHUB_OUTPUT
         }
     - shell: pwsh
-      run: White-Output "steps.dotnet_setup_completed.outputs.result = ${{ steps.dotnet_setup_completed.outputs.result  }}"
+      run: Write-Output "steps.dotnet_setup_completed.outputs.result = ${{ steps.dotnet_setup_completed.outputs.result }}"
     - if: steps.dotnet_setup_completed.outputs.result == 'ng'
       uses: actions/setup-dotnet@v3
       with:
