@@ -22,20 +22,19 @@ runs:
   using: "composite"
   steps:
     - name: .NETセットアップ済みか確認
-      id: dotnet_setup_completed
+      id: check
       shell: pwsh
       run: |
-        $result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
-        if ($result.ExitCode -eq 0) {
+        $Result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
+        if ($Result.ExitCode -eq 0) {
           Write-Output "dotnet setup completed"
-          Write-Output "result=ok" >> $Env:GITHUB_OUTPUT
+          Write-Output "dotnet_setup_completed=yes" >> $Env:GITHUB_OUTPUT
         }else{
           Write-Output "dotnet setup not completed"
-          Write-Output "result=ng" >> $Env:GITHUB_OUTPUT
+          Write-Output "dotnet_setup_completed=no" >> $Env:GITHUB_OUTPUT
         }
-    - shell: pwsh
-      run: Write-Output "steps.dotnet_setup_completed.outputs.result = ${{ steps.dotnet_setup_completed.outputs.result }}"
-    - if: steps.dotnet_setup_completed.outputs.result == 'ng'
+    - name: .NETセットアップ
+      if: steps.check.outputs.dotnet_setup_completed == 'no'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
