@@ -28,10 +28,10 @@ runs:
         $result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
         if ($result.ExitCode -eq 0) {
           Write-Output "dotnet setup completed"
-          Write-Host "result=ok" >> $GITHUB_OUTPUT
+          Write-Output "result=ok" >> $Env:GITHUB_OUTPUT
         }else{
           Write-Output "dotnet setup not completed"
-          Write-Host "result=ng" >> $GITHUB_OUTPUT
+          Write-Output "result=ng" >> $Env:GITHUB_OUTPUT
         }
     - shell: pwsh
       run: Write-Output "steps.dotnet_setup_completed.outputs.result = ${{ steps.dotnet_setup_completed.outputs.result }}"
