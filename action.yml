@@ -33,7 +33,9 @@ runs:
           Write-Output "dotnet setup not completed"
           Write-Output "result=ng" >> $GITHUB_OUTPUT
         }
-    - if: steps.dotnet_setup_completed.outcome == 'failure'
+    - shell: pwsh
+      run: White-Output "steps.dotnet_setup_completed.outputs.result = ${{ steps.dotnet_setup_completed.outputs.result  }}"
+    - if: steps.dotnet_setup_completed.outputs.result == 'ng'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
