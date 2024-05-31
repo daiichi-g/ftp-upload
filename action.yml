@@ -33,19 +33,26 @@ runs:
           Write-Output "dotnet setup not completed"
           Write-Output "dotnet_setup_completed=no" >> $Env:GITHUB_OUTPUT
         }
+
     - name: .NETセットアップ
       if: steps.check.outputs.dotnet_setup_completed == 'no'
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '8.0.x'
+
     - name: .NETバージョン確認
       shell: pwsh
-      run: |
-        dotnet --version
+      run: dotnet --version
+
+    - name: .NET詳細情報
+      shell: pwsh
+      run: dotnet --info
+
     - name: カレントディレクトリを確認
       shell: pwsh
       run: |
         pwd
+
     - name: .NETプロジェクトを実行
       shell: pwsh
       run: |
