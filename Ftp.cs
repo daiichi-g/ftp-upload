@@ -160,6 +160,28 @@ namespace ftp_upload
                 Console.WriteLine();
                 var profile = await client.AutoConnect();
 
+                // アップロード先のフォルダが存在するかチェック
+                var existsFile = await client.FileExists(remote);
+                if (!existsFile)
+                {
+                    // アップロード先にファイルが存在しない場合、アップロード先の親フォルダが存在するかチェック
+                    var existsDir = await client.DirectoryExists(remote);
+                    if (!existsDir)
+                    {
+                        // アップロード先の親フォルダが存在しないため、エラー終了
+                        Console.Error.WriteLine($"  ");
+                        Console.Error.WriteLine($"  ");
+                        Console.Error.WriteLine($"#################################################################################################");
+                        Console.Error.WriteLine($"  【FTPアップロードエラー】");
+                        Console.Error.WriteLine($"  アップロード先の親フォルダ({Path.GetDirectoryName(remote)})が存在しないため、FTPアップロードに失敗しました。");
+                        Console.Error.WriteLine($"  リモートサーバー側にアップロード先の親フォルダを作成して、ワークフローを再実行してください。");
+                        Console.Error.WriteLine($"#################################################################################################");
+                        Console.Error.WriteLine($"  ");
+                        Console.Error.WriteLine($"  ");
+                        return false;
+                    }
+                }
+
                 Console.WriteLine();
                 Console.WriteLine("ファイルアップロード中...");
                 Console.WriteLine();
