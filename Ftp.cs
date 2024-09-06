@@ -165,7 +165,8 @@ namespace ftp_upload
                 if (!existsFile)
                 {
                     // アップロード先にファイルが存在しない場合、アップロード先の親フォルダが存在するかチェック
-                    var existsDir = await client.DirectoryExists(remote);
+                    var remoteDirPath = Path.GetDirectoryName(remote);
+                    var existsDir = await client.DirectoryExists(remoteDirPath);
                     if (!existsDir)
                     {
                         // アップロード先の親フォルダが存在しないため、エラー終了
