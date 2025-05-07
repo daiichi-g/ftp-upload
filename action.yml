@@ -33,20 +33,24 @@ runs:
         $HasVersion = $false
 
         # インストール済みのSDK一覧を取得する
-        $SdkList = & dotnet --list-sdks
-        if ($LASTEXITCODE -eq 0) {
-            # SDK一覧の取得に成功した場合、対象バージョンが含まれているかチェック
-            foreach ($Line in $SdkList) {
-                if ($Line -match $Pattern) {
-                    $HasVersion = $true
-                    break
+        try {
+            $SdkList = & dotnet --list-sdks
+            if ($LASTEXITCODE -eq 0) {
+                # SDK一覧の取得に成功した場合、対象バージョンが含まれているかチェック
+                foreach ($Sdk in $SdkList) {
+                    if ($Sdk -match $Pattern) {
+                        $HasVersion = $true
+                        break
+                    }
                 }
             }
+
+            # dotnet --list-sdks の実行結果を出力
+            Write-Output "SdkList: ${SdkList}"
         }
-
-        # dotnet --list-sdks の実行結果を出力
-        Write-Output "SdkList: ${SdkList}"
-
+        catch {
+            Write-Output "Failed to list dotnet SDKs"
+        }
 
         # 環境変数GITHUB_OUTPUTに結果を出力
         if ($HasVersion) {
