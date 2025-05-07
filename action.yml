@@ -32,8 +32,8 @@ runs:
         # 指定したバージョンのSDKがインストールされているかを保持する変数
         $HasVersion = $false
 
-        # インストール済みのSDK一覧を取得する
         try {
+            # インストール済みのSDK一覧を取得する
             $SdkList = & dotnet --list-sdks
 
             # 対象バージョンが含まれているかチェック
