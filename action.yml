@@ -35,13 +35,12 @@ runs:
         # インストール済みのSDK一覧を取得する
         try {
             $SdkList = & dotnet --list-sdks
-            if ($LASTEXITCODE -eq 0) {
-                # SDK一覧の取得に成功した場合、対象バージョンが含まれているかチェック
-                foreach ($Sdk in $SdkList) {
-                    if ($Sdk -match $Pattern) {
-                        $HasVersion = $true
-                        break
-                    }
+
+            # 対象バージョンが含まれているかチェック
+            foreach ($Sdk in $SdkList) {
+                if ($Sdk -match $Pattern) {
+                    $HasVersion = $true
+                    break
                 }
             }
 
