@@ -25,13 +25,36 @@ runs:
       id: check
       shell: pwsh
       run: |
-        $Result = Start-Process dotnet -ArgumentList "--version" -Wait -PassThru
-        if ($Result.ExitCode -eq 0) {
-          Write-Output "dotnet setup completed"
-          Write-Output "dotnet_setup_completed=yes" >> $Env:GITHUB_OUTPUT
-        }else{
-          Write-Output "dotnet setup not completed"
-          Write-Output "dotnet_setup_completed=no" >> $Env:GITHUB_OUTPUT
+        # 検出対象のメジャーバージョン番号
+        $Version = 8
+        $Pattern = "^$Version\.\d+\.\d+"
+
+        # 指定したバージョンのSDKがインストールされているかを保持する変数
+        $HasVersion = $false
+
+        # インストール済みのSDK一覧を取得する
+        $SdkList = & dotnet --list-sdks
+        if ($LASTEXITCODE -eq 0) {
+            # SDK一覧の取得に成功した場合、対象バージョンが含まれているかチェック
+            foreach ($Line in $SdkList) {
+                if ($Line -match $Pattern) {
+                    $HasVersion = $true
+                    break
+                }
+            }
+        }
+
+        # dotnet --list-sdks の実行結果を出力
+        Write-Output "SdkList: ${SdkList}"
+
+
+        # 環境変数GITHUB_OUTPUTに結果を出力
+        if ($HasVersion) {
+            Write-Output "dotnet $Version.x is installed"
+            Write-Output "dotnet_setup_completed=yes" >> $Env:GITHUB_OUTPUT
+        } else {
+            Write-Output "dotnet $Version.x is not installed"
+            Write-Output "dotnet_setup_completed=no" >> $Env:GITHUB_OUTPUT
         }
 
     - name: .NETセットアップ
