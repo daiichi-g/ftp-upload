@@ -64,12 +64,30 @@ cmd.SetHandler<string, string, string, string, string, bool>(async (server, user
         throw new Exception($"パラメータ指定が不適切なため、FTPアップロードを中止しました。");
     }
 
+
     var ftp = new Ftp(server, user, password);
-    var success = await ftp.UploadAsync(local, remote, mirror);
-    if (!success)
+
+    var count = 3; // 実行回数
+    for (var num = 1; num <= count; num++)
     {
-        throw new Exception("FTPアップロードに失敗しました");
+        Console.WriteLine($"FTPアップロード({num})");
+        var success = await ftp.UploadAsync(local, remote, mirror);
+        if (success)
+        {
+            break; // 成功したらループを抜ける
+        }
+
+        if (num == count)
+        {
+            throw new Exception("FTPアップロードに失敗しました");
+        }
+
+        // 失敗した場合は、少し待ってから再試行
+        Console.WriteLine("FTPアップロードに失敗したため、再試行します。");
+        await Task.Delay(5000); // 5秒待つ
     }
+
+    Console.WriteLine("FTPアップロードが完了しました。");
 }, option1, option2, option3, option4, option5, option6);
 
 Console.WriteLine("Start");
