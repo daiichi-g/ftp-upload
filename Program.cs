@@ -1,32 +1,32 @@
 ﻿using System.CommandLine;
 using ftp_upload;
 
-var option1 = new Option<string>("--server") { Required = true, Description = "FTPサーバー名" };
-var option2 = new Option<string>("--user") { Required = true, Description = "FTPユーザー名" };
-var option3 = new Option<string>("--password") { Required = true, Description = "FTPパスワード" };
-var option4 = new Option<string>("--remote") { Required = true, Description = "リモートパス" };
-var option5 = new Option<string>("--local") { Required = true, Description = "ローカルパス" };
-var option6 = new Option<bool>("--mirror") { Required = false, Description = "ミラーリングするかどうか", DefaultValueFactory = (_) => false };
+var serverOption = new Option<string>("--server") { Required = true, Description = "FTPサーバー名" };
+var userOption = new Option<string>("--user") { Required = true, Description = "FTPユーザー名" };
+var passwordOption = new Option<string>("--password") { Required = true, Description = "FTPパスワード" };
+var remoteOption = new Option<string>("--remote") { Required = true, Description = "リモートパス" };
+var localOption = new Option<string>("--local") { Required = true, Description = "ローカルパス" };
+var mirrorOption = new Option<bool>("--mirror") { Required = false, Description = "ミラーリングするかどうか", DefaultValueFactory = (_) => false };
 
 var rootCommand = new RootCommand("FTPアップロードするCLIツール");
-rootCommand.Options.Add(option1);
-rootCommand.Options.Add(option2);
-rootCommand.Options.Add(option3);
-rootCommand.Options.Add(option4);
-rootCommand.Options.Add(option5);
-rootCommand.Options.Add(option6);
+rootCommand.Options.Add(serverOption);
+rootCommand.Options.Add(userOption);
+rootCommand.Options.Add(passwordOption);
+rootCommand.Options.Add(remoteOption);
+rootCommand.Options.Add(localOption);
+rootCommand.Options.Add(mirrorOption);
 
 rootCommand.SetAction(async parseResult =>
 {
     try
     {
         // コマンドライン引数の取得
-        var server = parseResult.GetValue(option1) ?? "";
-        var user = parseResult.GetValue(option2) ?? "";
-        var password = parseResult.GetValue(option3) ?? "";
-        var remote = parseResult.GetValue(option4) ?? "";
-        var local = parseResult.GetValue(option5) ?? "";
-        var mirror = parseResult.GetValue(option6);
+        var server = parseResult.GetValue(serverOption) ?? "";
+        var user = parseResult.GetValue(userOption) ?? "";
+        var password = parseResult.GetValue(passwordOption) ?? "";
+        var remote = parseResult.GetValue(remoteOption) ?? "";
+        var local = parseResult.GetValue(localOption) ?? "";
+        var mirror = parseResult.GetValue(mirrorOption);
 
         Console.WriteLine("コマンドライン引数の値:");
         Console.WriteLine($"server: {server}");
