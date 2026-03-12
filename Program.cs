@@ -21,11 +21,11 @@ rootCommand.SetAction(async parseResult =>
     try
     {
         // コマンドライン引数の取得
-        var server = parseResult.GetValue(option1);
-        var user = parseResult.GetValue(option2);
-        var password = parseResult.GetValue(option3);
-        var remote = parseResult.GetValue(option4);
-        var local = parseResult.GetValue(option5);
+        var server = parseResult.GetValue(option1) ?? "";
+        var user = parseResult.GetValue(option2) ?? "";
+        var password = parseResult.GetValue(option3) ?? "";
+        var remote = parseResult.GetValue(option4) ?? "";
+        var local = parseResult.GetValue(option5) ?? "";
         var mirror = parseResult.GetValue(option6);
 
         Console.WriteLine("コマンドライン引数の値:");
@@ -35,9 +35,6 @@ rootCommand.SetAction(async parseResult =>
         Console.WriteLine($"remote: {remote}");
         Console.WriteLine($"local: {local}");
         Console.WriteLine($"mirror: {mirror}");
-
-        Console.WriteLine("");
-        Console.WriteLine($"Path.GetFullPath(localDir): {Path.GetFullPath(local)}");
 
 
         // パラメータチェック
@@ -65,6 +62,11 @@ rootCommand.SetAction(async parseResult =>
         else if (!(Directory.Exists(local) || File.Exists(local)))
         {
             errors.Add("ローカル側のパスには、存在するファイルorディレクトリのパスを指定してください。");
+        }
+        else
+        {
+            Console.WriteLine("");
+            Console.WriteLine($"Path.GetFullPath(local): {Path.GetFullPath(local)}");
         }
         if (errors.Count() > 0)
         {
