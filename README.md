@@ -66,7 +66,7 @@ jobs:
           local: ./manage/bin/Release/net10.0/publish
           mirror: false
           app-offline: true
-          app-offline-initial-wait-seconds: 3
+          app-offline-wait-seconds: '3,5,15'
 ```
 
 ## パラメータ
@@ -79,7 +79,7 @@ jobs:
 |local  |必須  |  | ローカル側のファイルパス(またはディレクトリパス)<span style='color:red'>※1</span> |
 |mirror  | | false | true:ミラーリングあり<br>false:ミラーリングなし<br>※ディレクトリアップロード時にのみ有効なオプション |
 |app-offline  | | false | true:ASP.NET Core on IIS向けに、アップロード前に`remote/app_offline.htm`を配置してアプリケーションを停止する<br>false:配置しない<br>※ディレクトリアップロード時にのみ有効なオプション |
-|app-offline-initial-wait-seconds  | | 3 | `app_offline.htm`配置後、1回目のアップロード開始まで待機する秒数<br>0〜300の範囲で指定 |
+|app-offline-wait-seconds  | | 3,5,15 | `app_offline.htm`配置後およびアップロード失敗後の待機秒数パターン<br>カンマ区切りで1〜3個、各値は0〜300の範囲で指定 |
 
 <span style='color:red'>※1: local=ファイルパスとremote=ディレクトリパス、またはその逆の組み合わせは指定できません<br>
 
@@ -87,11 +87,13 @@ jobs:
 
 `app-offline: true`を指定すると、ASP.NET Core on IIS向けにアップロード前へ`app_offline.htm`を配置し、アプリケーションを停止してからディレクトリアップロードします。配置先は`remote/app_offline.htm`固定です。
 
-処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-initial-wait-seconds`秒待機、`local/web.config`の存在確認、存在する場合は`remote/web.config`への先行アップロードと3秒待機、本体ディレクトリアップロード、`app_offline.htm`削除です。
+処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-wait-seconds`の待機パターンに沿ったアップロード試行、`app_offline.htm`削除です。
 
 `app-offline: false`でもディレクトリアップロード時は同様に、`local/web.config`が存在する場合のみ先行アップロードと3秒待機を行ってから本体アップロードを実行します。
 
-`app-offline: true`の場合、1回目のアップロード失敗後は5秒待機して再試行し、2回目の失敗後は15秒待機して再試行します。失敗後の追加待機秒数は初期版では固定です。
+`app-offline-wait-seconds`はカンマ区切りの待機パターンです。例えば`'3,5,15'`を指定した場合、`app_offline.htm`配置後に3秒待機して1回目のアップロードを実行し、失敗した場合は5秒待機して2回目、それでも失敗した場合は15秒待機して3回目を実行します。待機秒数の個数がアップロード試行回数になるため、`'3'`は最大1回、`'3,5'`は最大2回、`'3,5,15'`は最大3回アップロードします。
+
+各アップロード試行では、`local/web.config`が存在する場合に`remote/web.config`への先行アップロードと3秒待機を行ってから本体ディレクトリアップロードを実行します。`app-offline: false`の場合、`app-offline-wait-seconds`は使用せず、既存どおり最大3回アップロードし、失敗時は5秒待機して再試行します。
 
 `remote/app_offline.htm`が既に存在する場合は、既存のメンテナンスページを上書き・削除しないためエラーになります。`local`がファイルの場合、`app-offline`は利用できません。
 

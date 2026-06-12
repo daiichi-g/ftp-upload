@@ -22,10 +22,10 @@ inputs:
     description: 'ASP.NET Core on IIS向けに、アップロード前に app_offline.htm を配置してアプリケーションを停止する'
     required: false
     default: 'false'
-  app-offline-initial-wait-seconds:
-    description: 'app_offline.htm 配置後、1回目のアップロード開始まで待機する秒数'
+  app-offline-wait-seconds:
+    description: 'app_offline.htm 配置後およびアップロード失敗後の待機秒数。カンマ区切りで指定する。例: 3,5,15'
     required: false
-    default: '3'
+    default: '3,5,15'
 runs:
   using: "composite"
   steps:
@@ -99,4 +99,4 @@ runs:
                    --local ${{ inputs.local }} `
                    --mirror ${{ inputs.mirror }} `
                    --app-offline ${{ inputs.app-offline }} `
-                   --app-offline-initial-wait-seconds ${{ inputs.app-offline-initial-wait-seconds }}
+                   --app-offline-wait-seconds "${{ inputs.app-offline-wait-seconds }}"

@@ -24,7 +24,7 @@ var remoteOption = new Option<string>("--remote") { Required = true, Description
 var localOption = new Option<string>("--local") { Required = true, Description = "ローカルパス" };
 var mirrorOption = new Option<bool>("--mirror") { Required = false, Description = "ミラーリングするかどうか", DefaultValueFactory = (_) => false };
 var appOfflineOption = new Option<bool>("--app-offline") { Required = false, Description = "ASP.NET Core on IIS向けにapp_offline.htmを配置するかどうか", DefaultValueFactory = (_) => false };
-var appOfflineInitialWaitSecondsOption = new Option<int>("--app-offline-initial-wait-seconds") { Required = false, Description = "app_offline.htm配置後、1回目のアップロード開始まで待機する秒数", DefaultValueFactory = (_) => 3 };
+var appOfflineWaitSecondsOption = new Option<string>("--app-offline-wait-seconds") { Required = false, Description = "app_offline.htm配置後およびアップロード失敗後の待機秒数。カンマ区切りで指定する。例: 3,5,15", DefaultValueFactory = (_) => "3,5,15" };
 
 var rootCommand = new RootCommand("FTPアップロードするCLIツール");
 rootCommand.Options.Add(serverOption);
@@ -34,7 +34,7 @@ rootCommand.Options.Add(remoteOption);
 rootCommand.Options.Add(localOption);
 rootCommand.Options.Add(mirrorOption);
 rootCommand.Options.Add(appOfflineOption);
-rootCommand.Options.Add(appOfflineInitialWaitSecondsOption);
+rootCommand.Options.Add(appOfflineWaitSecondsOption);
 
 rootCommand.SetAction(async parseResult =>
 {
@@ -48,7 +48,7 @@ rootCommand.SetAction(async parseResult =>
         var local = parseResult.GetValue(localOption) ?? "";
         var mirror = parseResult.GetValue(mirrorOption);
         var appOffline = parseResult.GetValue(appOfflineOption);
-        var appOfflineInitialWaitSeconds = parseResult.GetValue(appOfflineInitialWaitSecondsOption);
+        var appOfflineWaitSeconds = parseResult.GetValue(appOfflineWaitSecondsOption) ?? "";
 
         Console.WriteLine("コマンドライン引数の値:");
         Console.WriteLine($"server: {server}");
@@ -58,7 +58,7 @@ rootCommand.SetAction(async parseResult =>
         Console.WriteLine($"local: {local}");
         Console.WriteLine($"mirror: {mirror}");
         Console.WriteLine($"app-offline: {appOffline}");
-        Console.WriteLine($"app-offline-initial-wait-seconds: {appOfflineInitialWaitSeconds}");
+        Console.WriteLine($"app-offline-wait-seconds: {appOfflineWaitSeconds}");
 
 
         // パラメータチェック
@@ -92,13 +92,14 @@ rootCommand.SetAction(async parseResult =>
             Console.WriteLine("");
             Console.WriteLine($"Path.GetFullPath(local): {Path.GetFullPath(local)}");
         }
-        if (appOfflineInitialWaitSeconds < 0 || appOfflineInitialWaitSeconds > 300)
-        {
-            errors.Add("app-offline-initial-wait-secondsには、0〜300の範囲の秒数を指定してください。");
-        }
         if (appOffline && File.Exists(local))
         {
             errors.Add("app-offlineはディレクトリアップロード時のみ利用できます。localにはディレクトリのパスを指定してください。");
+        }
+        var appOfflineWaitPattern = Array.Empty<int>();
+        if (appOffline && !TryParseAppOfflineWaitSeconds(appOfflineWaitSeconds, out appOfflineWaitPattern, out var appOfflineWaitSecondsError))
+        {
+            errors.Add(appOfflineWaitSecondsError);
         }
         if (errors.Count() > 0)
         {
@@ -111,7 +112,7 @@ rootCommand.SetAction(async parseResult =>
         var ftp = new Ftp(server, user, password);
         if (appOffline)
         {
-            var success = await RunWithAppOfflineAsync(ftp, local, remote, mirror, appOfflineInitialWaitSeconds);
+            var success = await RunWithAppOfflineAsync(ftp, local, remote, mirror, appOfflineWaitPattern);
             if (!success)
             {
                 return 1;
@@ -119,9 +120,7 @@ rootCommand.SetAction(async parseResult =>
         }
         else
         {
-            var success = Directory.Exists(local)
-                ? await RunWithWebConfigFirstUploadAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false)
-                : await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false);
+            var success = await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false);
             if (!success)
             {
                 throw new Exception("FTPアップロードに失敗しました");
@@ -146,7 +145,7 @@ rootCommand.SetAction(async parseResult =>
 var parseResult = rootCommand.Parse(args);
 return parseResult.Invoke();
 
-static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string remote, bool mirror, int appOfflineInitialWaitSeconds)
+static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string remote, bool mirror, int[] appOfflineWaitSeconds)
 {
     var remoteAppOfflinePath = Ftp.CombineRemotePath(remote, Ftp.AppOfflineFileName);
     var appOfflineUploadAttempted = false;
@@ -180,20 +179,7 @@ static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string rem
             DeleteTempFile(tempAppOfflinePath);
         }
 
-        if (appOfflineInitialWaitSeconds > 0)
-        {
-            Console.WriteLine($"app_offline.htm配置後、1回目のアップロード開始まで{appOfflineInitialWaitSeconds}秒待機します。");
-            await Task.Delay(TimeSpan.FromSeconds(appOfflineInitialWaitSeconds));
-        }
-
-        uploadSuccess = await RunWithWebConfigFirstUploadAsync(
-            ftp,
-            local,
-            remote,
-            mirror,
-            excludeAppOfflineFromMirror: true,
-            retryWaitSeconds: new[] { 5, 15 }
-        );
+        uploadSuccess = await UploadWithWaitPatternAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: true, appOfflineWaitSeconds);
         if (!uploadSuccess)
         {
             Console.Error.WriteLine("FTPアップロードに失敗しました。");
@@ -214,7 +200,7 @@ static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string rem
     return uploadSuccess && deleteSuccess;
 }
 
-static async Task<bool> RunWithWebConfigFirstUploadAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror, int[]? retryWaitSeconds = null)
+static async Task<bool> RunWithWebConfigFirstUploadOnceAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror)
 {
     var webConfigPath = Path.Join(local, WebConfigFileName);
     if (File.Exists(webConfigPath))
@@ -231,7 +217,7 @@ static async Task<bool> RunWithWebConfigFirstUploadAsync(Ftp ftp, string local, 
         await Task.Delay(TimeSpan.FromSeconds(WebConfigInitialWaitSeconds));
     }
 
-    return await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror, retryWaitSeconds);
+    return await ftp.UploadAsync(local, remote, mirror, excludeAppOfflineFromMirror);
 }
 
 static async Task<bool> UploadWithRetryAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror, int[]? retryWaitSeconds = null)
@@ -241,7 +227,7 @@ static async Task<bool> UploadWithRetryAsync(Ftp ftp, string local, string remot
     for (var num = 1; num <= count; num++)
     {
         Console.WriteLine($"FTPアップロード({num})");
-        var success = await ftp.UploadAsync(local, remote, mirror, excludeAppOfflineFromMirror);
+        var success = await UploadOnceAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror);
         if (success)
         {
             return true;
@@ -259,6 +245,87 @@ static async Task<bool> UploadWithRetryAsync(Ftp ftp, string local, string remot
     }
 
     return false;
+}
+
+static async Task<bool> UploadWithWaitPatternAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror, int[] waitSeconds)
+{
+    for (var index = 0; index < waitSeconds.Length; index++)
+    {
+        var waitSecond = waitSeconds[index];
+        if (waitSecond > 0)
+        {
+            Console.WriteLine($"FTPアップロード({index + 1})の開始前に{waitSecond}秒待機します。");
+            await Task.Delay(TimeSpan.FromSeconds(waitSecond));
+        }
+
+        Console.WriteLine($"FTPアップロード({index + 1})");
+        var success = await UploadOnceAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror);
+        if (success)
+        {
+            return true;
+        }
+
+        if (index < waitSeconds.Length - 1)
+        {
+            Console.WriteLine("FTPアップロードに失敗したため、次の待機パターンで再試行します。");
+        }
+    }
+
+    return false;
+}
+
+static async Task<bool> UploadOnceAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror)
+{
+    return Directory.Exists(local)
+        ? await RunWithWebConfigFirstUploadOnceAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror)
+        : await ftp.UploadAsync(local, remote, mirror, excludeAppOfflineFromMirror);
+}
+
+static bool TryParseAppOfflineWaitSeconds(string value, out int[] waitSeconds, out string errorMessage)
+{
+    waitSeconds = Array.Empty<int>();
+    errorMessage = "";
+
+    if (string.IsNullOrWhiteSpace(value))
+    {
+        errorMessage = "app-offline-wait-secondsには、1〜3個の待機秒数をカンマ区切りで指定してください。例: 3,5,15";
+        return false;
+    }
+
+    var parts = value.Split(',');
+    if (parts.Length < 1 || parts.Length > 3)
+    {
+        errorMessage = "app-offline-wait-secondsに指定できる待機秒数は1〜3個です。例: 3,5,15";
+        return false;
+    }
+
+    var parsedWaitSeconds = new List<int>();
+    foreach (var part in parts)
+    {
+        var trimmedPart = part.Trim();
+        if (trimmedPart == "")
+        {
+            errorMessage = "app-offline-wait-secondsに空の要素が含まれています。例: 3,5,15";
+            return false;
+        }
+
+        if (!int.TryParse(trimmedPart, out var seconds))
+        {
+            errorMessage = $"app-offline-wait-secondsには整数を指定してください。'{trimmedPart}'は整数として解釈できません。";
+            return false;
+        }
+
+        if (seconds < 0 || seconds > 300)
+        {
+            errorMessage = "app-offline-wait-secondsの各値には、0〜300の範囲の秒数を指定してください。";
+            return false;
+        }
+
+        parsedWaitSeconds.Add(seconds);
+    }
+
+    waitSeconds = parsedWaitSeconds.ToArray();
+    return true;
 }
 
 static async Task<string> CreateAppOfflineTempFileAsync()
