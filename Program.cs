@@ -259,7 +259,7 @@ static async Task<bool> UploadWithWaitPatternAsync(Ftp ftp, string local, string
         }
 
         Console.WriteLine($"FTPアップロード({index + 1})");
-        var success = await UploadOnceAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror);
+        var success = await ftp.UploadAsync(local, remote, mirror, excludeAppOfflineFromMirror);
         if (success)
         {
             return true;
