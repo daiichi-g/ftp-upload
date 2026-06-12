@@ -66,7 +66,7 @@ jobs:
           local: ./manage/bin/Release/net10.0/publish
           mirror: false
           app-offline: true
-          app-offline-wait-seconds: 30
+          app-offline-initial-wait-seconds: 3
 ```
 
 ## パラメータ
@@ -79,7 +79,7 @@ jobs:
 |local  |必須  |  | ローカル側のファイルパス(またはディレクトリパス)<span style='color:red'>※1</span> |
 |mirror  | | false | true:ミラーリングあり<br>false:ミラーリングなし<br>※ディレクトリアップロード時にのみ有効なオプション |
 |app-offline  | | false | true:ASP.NET Core on IIS向けに、アップロード前に`remote/app_offline.htm`を配置してアプリケーションを停止する<br>false:配置しない<br>※ディレクトリアップロード時にのみ有効なオプション |
-|app-offline-wait-seconds  | | 30 | `app_offline.htm`配置後、アップロード開始まで待機する秒数<br>0〜300の範囲で指定 |
+|app-offline-initial-wait-seconds  | | 3 | `app_offline.htm`配置後、1回目のアップロード開始まで待機する秒数<br>0〜300の範囲で指定 |
 
 <span style='color:red'>※1: local=ファイルパスとremote=ディレクトリパス、またはその逆の組み合わせは指定できません<br>
 
@@ -87,7 +87,9 @@ jobs:
 
 `app-offline: true`を指定すると、ASP.NET Core on IIS向けにアップロード前へ`app_offline.htm`を配置し、アプリケーションを停止してからディレクトリアップロードします。配置先は`remote/app_offline.htm`固定です。
 
-処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-wait-seconds`秒待機、通常のディレクトリアップロード、`app_offline.htm`削除です。通常のディレクトリアップロードでは、既存の`web.config`先行アップロード処理もそのまま実行されます。
+処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-initial-wait-seconds`秒待機、通常のディレクトリアップロード、`app_offline.htm`削除です。通常のディレクトリアップロードでは、既存の`web.config`先行アップロード処理もそのまま実行されます。
+
+`app-offline: true`の場合、1回目のアップロード失敗後は5秒待機して再試行し、2回目の失敗後は15秒待機して再試行します。失敗後の追加待機秒数は初期版では固定です。
 
 `remote/app_offline.htm`が既に存在する場合は、既存のメンテナンスページを上書き・削除しないためエラーになります。`local`がファイルの場合、`app-offline`は利用できません。
 
