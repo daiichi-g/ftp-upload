@@ -18,6 +18,14 @@ inputs:
     description: "ミラーリングするかどうか"
     required: false
     default: false
+  app-offline:
+    description: 'ASP.NET Core on IIS向けに、アップロード前に app_offline.htm を配置してアプリケーションを停止する'
+    required: false
+    default: 'false'
+  app-offline-wait-seconds:
+    description: 'app_offline.htm 配置後およびアップロード失敗後の待機秒数。カンマ区切りで指定する。例: 3,5,15'
+    required: false
+    default: '3,5,15'
 runs:
   using: "composite"
   steps:
@@ -89,4 +97,6 @@ runs:
                    --password ${{ inputs.password }} `
                    --remote ${{ inputs.remote }} `
                    --local ${{ inputs.local }} `
-                   --mirror ${{ inputs.mirror}}
+                   --mirror ${{ inputs.mirror }} `
+                   --app-offline ${{ inputs.app-offline }} `
+                   --app-offline-wait-seconds "${{ inputs.app-offline-wait-seconds }}"

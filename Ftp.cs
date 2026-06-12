@@ -1,10 +1,13 @@
 ﻿using System;
 using FluentFTP;
+using FluentFTP.Rules;
 
 namespace ftp_upload
 {
     public class Ftp
     {
+        public const string AppOfflineFileName = "app_offline.htm";
+
         /// <summary>
         /// FTPサーバー名
         /// </summary>
@@ -43,13 +46,26 @@ namespace ftp_upload
         /// <returns></returns>
         public async Task<bool> UploadAsync(string local, string remote, bool mirror)
         {
+            return await UploadAsync(local, remote, mirror, excludeAppOfflineFromMirror: false);
+        }
+
+        /// <summary>
+        /// アップロード
+        /// </summary>
+        /// <param name="local">ローカル側のパス</param>
+        /// <param name="remote">リモート側のパス</param>
+        /// <param name="mirror">ミラーリングするかどうか</param>
+        /// <param name="excludeAppOfflineFromMirror">Mirror時にapp_offline.htmを削除・上書き対象から除外するかどうか</param>
+        /// <returns></returns>
+        public async Task<bool> UploadAsync(string local, string remote, bool mirror, bool excludeAppOfflineFromMirror)
+        {
             var type = CalcPathType(local);
             switch (type)
             {
                 case PathType.File:
                     return await UploadFileAsync(local, remote);
                 case PathType.Directory:
-                    return await UploadDirectoryAsync(local, remote, mirror);
+                    return await UploadDirectoryAsync(local, remote, mirror, excludeAppOfflineFromMirror);
                 case PathType.NotFound:
                 default:
                     return false;
@@ -65,28 +81,32 @@ namespace ftp_upload
         /// <returns></returns>
         public async Task<bool> UploadDirectoryAsync(string local, string remote, bool mirror)
         {
-            // ディレクトリ直下にweb.configがある場合は、web.configを先にアップロード
-            var fileName = "web.config";
-            var filePath = Path.Join(local, fileName);
-            if (File.Exists(filePath))
-            {
-                Console.WriteLine("web.configをアップロード中...");
-                var success = await UploadFileAsync(
-                    local: filePath,
-                    remote: remote.EndsWith("/") ? $"{remote}{fileName}" : $"{remote}/{fileName}"
-                );
-                if (!success)
-                {
-                    return false;
-                }
+            return await UploadDirectoryAsync(local, remote, mirror, excludeAppOfflineFromMirror: false);
+        }
 
-                Console.WriteLine("IISが実行ファイルを解放するのを待機...");
-                await Task.Delay(3000);
-            }
-
+        /// <summary>
+        /// ディレクトリアップロード
+        /// </summary>
+        /// <param name="local">ローカル側のパス</param>
+        /// <param name="remote">リモート側のパス</param>
+        /// <param name="mirror">ミラーリングするかどうか</param>
+        /// <param name="excludeAppOfflineFromMirror">Mirror時にapp_offline.htmを削除・上書き対象から除外するかどうか</param>
+        /// <returns></returns>
+        public async Task<bool> UploadDirectoryAsync(string local, string remote, bool mirror, bool excludeAppOfflineFromMirror)
+        {
             var client = new AsyncFtpClient(Server, User, Password);
             try
             {
+                List<FtpRule>? rules = null;
+                if (excludeAppOfflineFromMirror)
+                {
+                    rules = new List<FtpRule>
+                    {
+                        new FtpFileNameRule(false, new List<string> { AppOfflineFileName })
+                    };
+                    client.Config.UploadDirectoryDeleteExcluded = false;
+                }
+
                 Console.WriteLine();
                 Console.WriteLine("FTP接続中...");
                 Console.WriteLine();
@@ -102,6 +122,7 @@ namespace ftp_upload
                     remoteFolder: remote,
                     mode: mirror ? FtpFolderSyncMode.Mirror : FtpFolderSyncMode.Update,
                     existsMode: FtpRemoteExists.Overwrite,
+                    rules: rules,
                     progress: new Progress<FtpProgress>(p =>
                     {
                         Console.WriteLine($"[{p.FileIndex + 1}/{p.FileCount}] {Math.Round(p.Progress)}% {p.TransferSpeedToString().PadLeft(10, ' ')} {p.RemotePath}");
@@ -225,6 +246,87 @@ namespace ftp_upload
             {
                 await client.Disconnect();
             }
+        }
+
+        /// <summary>
+        /// リモートファイルの存在確認
+        /// </summary>
+        /// <param name="remote">リモート側のファイルパス</param>
+        /// <returns></returns>
+        public async Task<bool> RemoteFileExistsAsync(string remote)
+        {
+            var client = new AsyncFtpClient(Server, User, Password);
+            try
+            {
+                Console.WriteLine();
+                Console.WriteLine("FTP接続中...");
+                Console.WriteLine();
+                var profile = await client.AutoConnect();
+
+                return await client.FileExists(remote);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"リモートファイル({remote})の存在確認に失敗しました: {ex.Message}", ex);
+            }
+            finally
+            {
+                await client.Disconnect();
+            }
+        }
+
+        /// <summary>
+        /// リモートファイルの削除
+        /// </summary>
+        /// <param name="remote">リモート側のファイルパス</param>
+        /// <returns></returns>
+        public async Task<bool> DeleteRemoteFileAsync(string remote)
+        {
+            var client = new AsyncFtpClient(Server, User, Password);
+            try
+            {
+                Console.WriteLine();
+                Console.WriteLine("FTP接続中...");
+                Console.WriteLine();
+                var profile = await client.AutoConnect();
+
+                Console.WriteLine("app_offline.htmを削除中...");
+                if (!await client.FileExists(remote))
+                {
+                    Console.WriteLine($"app_offline.htmは既に存在しません: {remote}");
+                    return true;
+                }
+
+                await client.DeleteFile(remote);
+                if (await client.FileExists(remote))
+                {
+                    Console.Error.WriteLine($"app_offline.htmを削除できませんでした: {remote}");
+                    return false;
+                }
+
+                Console.WriteLine($"app_offline.htmを削除しました: {remote}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Ftp.DeleteRemoteFileAsync ex: {ex.Message}");
+                return false;
+            }
+            finally
+            {
+                await client.Disconnect();
+            }
+        }
+
+        /// <summary>
+        /// FTPパスを/区切りで結合
+        /// </summary>
+        /// <param name="remoteFolder">リモート側のディレクトリパス</param>
+        /// <param name="fileName">ファイル名</param>
+        /// <returns></returns>
+        public static string CombineRemotePath(string remoteFolder, string fileName)
+        {
+            return $"{remoteFolder.TrimEnd('/')}/{fileName.TrimStart('/')}";
         }
 
         private static string CalcStatusLabel(FtpStatus value)
