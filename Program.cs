@@ -14,6 +14,8 @@ const string AppOfflineContent = """
 </body>
 </html>
 """;
+const string WebConfigFileName = "web.config";
+const int WebConfigInitialWaitSeconds = 3;
 
 var serverOption = new Option<string>("--server") { Required = true, Description = "FTPサーバー名" };
 var userOption = new Option<string>("--user") { Required = true, Description = "FTPユーザー名" };
@@ -117,7 +119,9 @@ rootCommand.SetAction(async parseResult =>
         }
         else
         {
-            var success = await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false);
+            var success = Directory.Exists(local)
+                ? await RunWithWebConfigFirstUploadAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false)
+                : await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror: false);
             if (!success)
             {
                 throw new Exception("FTPアップロードに失敗しました");
@@ -182,7 +186,7 @@ static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string rem
             await Task.Delay(TimeSpan.FromSeconds(appOfflineInitialWaitSeconds));
         }
 
-        uploadSuccess = await UploadWithRetryAsync(
+        uploadSuccess = await RunWithWebConfigFirstUploadAsync(
             ftp,
             local,
             remote,
@@ -208,6 +212,26 @@ static async Task<bool> RunWithAppOfflineAsync(Ftp ftp, string local, string rem
     }
 
     return uploadSuccess && deleteSuccess;
+}
+
+static async Task<bool> RunWithWebConfigFirstUploadAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror, int[]? retryWaitSeconds = null)
+{
+    var webConfigPath = Path.Join(local, WebConfigFileName);
+    if (File.Exists(webConfigPath))
+    {
+        Console.WriteLine("web.configをアップロード中...");
+        var webConfigUploadSuccess = await ftp.UploadFileAsync(webConfigPath, Ftp.CombineRemotePath(remote, WebConfigFileName));
+        if (!webConfigUploadSuccess)
+        {
+            Console.Error.WriteLine("web.configの先行アップロードに失敗したため、FTPアップロードを中止しました。");
+            return false;
+        }
+
+        Console.WriteLine($"IISが実行ファイルを解放するのを待機({WebConfigInitialWaitSeconds}秒)...");
+        await Task.Delay(TimeSpan.FromSeconds(WebConfigInitialWaitSeconds));
+    }
+
+    return await UploadWithRetryAsync(ftp, local, remote, mirror, excludeAppOfflineFromMirror, retryWaitSeconds);
 }
 
 static async Task<bool> UploadWithRetryAsync(Ftp ftp, string local, string remote, bool mirror, bool excludeAppOfflineFromMirror, int[]? retryWaitSeconds = null)

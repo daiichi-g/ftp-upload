@@ -87,7 +87,9 @@ jobs:
 
 `app-offline: true`を指定すると、ASP.NET Core on IIS向けにアップロード前へ`app_offline.htm`を配置し、アプリケーションを停止してからディレクトリアップロードします。配置先は`remote/app_offline.htm`固定です。
 
-処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-initial-wait-seconds`秒待機、通常のディレクトリアップロード、`app_offline.htm`削除です。通常のディレクトリアップロードでは、既存の`web.config`先行アップロード処理もそのまま実行されます。
+処理順は、`remote/app_offline.htm`の存在確認、runnerの一時ディレクトリでの`app_offline.htm`作成、FTP配置、`app-offline-initial-wait-seconds`秒待機、`local/web.config`の存在確認、存在する場合は`remote/web.config`への先行アップロードと3秒待機、本体ディレクトリアップロード、`app_offline.htm`削除です。
+
+`app-offline: false`でもディレクトリアップロード時は同様に、`local/web.config`が存在する場合のみ先行アップロードと3秒待機を行ってから本体アップロードを実行します。
 
 `app-offline: true`の場合、1回目のアップロード失敗後は5秒待機して再試行し、2回目の失敗後は15秒待機して再試行します。失敗後の追加待機秒数は初期版では固定です。
 
